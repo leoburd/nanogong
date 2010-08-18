@@ -134,10 +134,6 @@ function nanogong_theme() {
 function nanogong_recorder_applet_markup($element,$widget){
   $field_id = $element['#id']."-value";
   $url = url('nanogong/file_upload',array('query'=>array('field_id'=>$field_id)));
-  $width = isset($widget['player_width'])?$widget['recorder_width']:300;
-  $height = isset($widget['player_height'])? $widget['recorder_height']:100;
-  $params = $widget['recorder_params'];
-  $params_str = nanogong_build_params($params);
 	
   $sampleURL = "";
   if(!empty($element['#value']['value'])){
@@ -153,36 +149,20 @@ function nanogong_recorder_applet_markup($element,$widget){
       'else alert("Voice recording has been submitted!"); } ';
   drupal_add_js($submitVoice, 'inline');	
 	
-	$output = 	/*'<applet '.
-				    ' code="com.softsynth.javasonics.recplay.RecorderUploadApplet"'.
-				    ' codebase="'.base_path().drupal_get_path('module','nanogong').'/codebase"'.
-				    ' archive="JavaSonicsListenUp.jar,OggXiphSpeexJS.jar"'.
-				    ' name="ListenUpRecorder"'.
-					' mayscript="true"'.
-				    ' width="'.$width.'"'.
-				    ' height="'.$height.'">'.
-				    $sampleURL.
-					' <param name="uploadURL" value="'.$url.'">'.
-				    ' <param name="uploadFileName" value="whatever.wav">'.$params_str.
-				' </applet>'.*/
-
-			'<applet '.
-					    ' id = "nanogong"'.
-					    ' code="gong.NanoGong"'.
-					    ' archive="'.base_path().drupal_get_path('module', 'nanogong').'/nanogongBase/nanogong.jar"'.
-					    ' name=ListenUpRecorder"'.
-					    ' width="180"'.
-					    ' height="40">'.
-					' </applet>'.
-					'<form>'.  
-						'<input type="button" value="Submit!" onclick="submitVoice()" />'.
-					'</form>';
-					//$sampleURL.
-						//' <param name="uploadURL" value="'.$url.'">'.
-						//'<param name="uploadFileName" value="whatever.wav">'.$params_str.
-					
+  $output = 
+    '<applet '.
+      ' id = "nanogong"'.
+      ' code="gong.NanoGong"'.
+      ' archive="'.base_path().drupal_get_path('module', 'nanogong').'/nanogongBase/nanogong.jar"'.
+      ' name=ListenUpRecorder"'.
+      ' width="180"'.
+      ' height="40">'.
+    ' </applet>'.
+    '<form>'.  
+      '<input type="button" value="Submit!" onclick="submitVoice()" />'.
+    '</form>';
 	
-	return $output;
+  return $output;
 }
 
 /**
