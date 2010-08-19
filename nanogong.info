@@ -1,6 +1,6 @@
 ; $Id$
-name = Nanogong 
-description = Implements a Java-based audio recorder field
-package = Nanogong
+name = nanogong
+description = cck field that provieds online audio recording using nanogong java applet
+package = CCK
 core = 6.x
-
+dependencies[] = content

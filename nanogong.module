@@ -1,19 +1,13 @@
 <?php
 // $Id$
 
-/**
- * @file
- * Implements a Java-based audio recorder field
+/*
+ * Implementation of hook menu
+ * defines the callback the listenUp module would use
  */
 
-foreach (array('nanogong_field.inc', 'nanogong_formatter.inc', 'nanogong_widget.inc') as $file) {
-  require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . $file);
-}
+//session_start();
 
-
-/**
- * Implementation of hook_menu()
- */
 function nanogong_menu() {
   $items = array();
   $items['nanogong/file_upload'] = array(
@@ -27,89 +21,6 @@ function nanogong_menu() {
   return $items;
 }
 
-/*
- * listenUp recorder applet callback. This is what happens when 
- * 'send' is pressed in the applet
- */
-function nanogong_file_receive(){
-
-    header("Cache-control: private");
-    header("Content-Type: text/plain");	
-	
-	$field_id = $_GET['field_id'];
-	
-	//TODO save duration in field
-	$duration = strip_tags($_POST['duration']);
-	$tmp_name = $_FILES['userfile']['tmp_name'];
-	$upload_dir = file_directory_path();
-
-	$c = (file_check_directory($upload_dir,0))? 1:0;
-	print("file folder writeable? $c");
-		
-	// TODO: get file extension from real file type
-	$new_name = time().'.wav';
-	$new_path = file_create_filename($new_name, $upload_dir);
-	//$new_path = $upload_dir.$new_name;
-	
-watchdog('nanogong', 'new path: '.$new_path);
-
-	if($_FILES['userfile']['error']>0){
-		watchdog('nanogong',"ERROR - error code: ".$_FILES['userfile']['error']."\n");
-		$fid = "NULL";
-	}else{
-			$_FILES['files'] = $_FILES['userfile'];
-			
-			$_FILES['files']['name'] = $new_name;
-			$use = 'name';//session_id();
-			
-			watchdog('nanogong', '$user: '.$use);
-			variable_set($use, $new_name);
-			foreach($_FILES['files'] as $key=>$value){
-				$_FILES['files'][$key] = array(0 => $value);
-			}
-
-			watchdog('nanogong', 'exporting files: '.print_r($_FILES, true));
-			dsm($_FILES);
-
-			 if(!$file = file_save_upload(0,array(),$upload_dir)){
-				watchdog('nanogong',"ERROR - file_save_upload failed\n");
-				$fid = "NULL";		
-			} else{
-				watchdog('nanogong', 'exporting file2: '.print_r($file, true));
-				$fid = $file->fid;
-				
-				//convert uploaded wav files to mp3 - does'nt work yet
-				/*
-				$ffmpeg_format    = 'libmp3lame';
-				$ffmpeg_extension = 'mp3';
-				$ffmpeg_frequency = '44100';
-				$ffmpeg_bitrate   = '64k';
-				$ffmpeg_channels  = '2';
-				$ffmpeg_mime      = 'audio/mpeg';
-				$ffmpeg_path      = $field['widget']['ffmpeg_path'] ?
-				$field['widget']['ffmpeg_path'] : '/usr/bin/ffmpeg';
-						
-				$ffmpeg_arguments = '-y -i ' . $file->filepath . ' ' .
-				'-f ' . $ffmpeg_extension . ' ' .
-				'-acodec ' . $ffmpeg_format . ' ' .
-				'-ar ' . $ffmpeg_frequency . ' ' .
-				'-ab ' . $ffmpeg_bitrate . ' ' .
-				'-ac ' . $ffmpeg_channels . ' ' .
-				$file->filepath.".mp3";
-	
-				var_export($ffmpeg_arguments);
-				// Convert the file to one with the fresh file name.
-				 $ffmpeg_results = shell_exec("ffmpeg" . " " . $ffmpeg_arguments);		
-				
-				*/		
-
-				watchdog('nanogong', "SUCCESS - File have been uploaded,\n");
-			}
-	}
-	watchdog('nanogong', 'works2');
-	$js = "document.getElementById('$field_id').value='$fid';";	
-	watchdog('nanogong', "CALLJS $js"); 
-}
 
 /**
  * Implementation of hook_theme().
@@ -126,44 +37,91 @@ function nanogong_theme() {
   );
 }
 
+/**
+* Declare information about a field type.
+*
+* @return
+*   An array keyed by field type name. Each element of the array is an associative
+*   array with these keys and values:
+*   - "label": The human-readable label for the field type.
+*/
+function nanogong_field_info() {
 
-
-/*
- * listenUp recorder applet
- */
-function nanogong_recorder_applet_markup($element,$widget){
-  $field_id = $element['#id']."-value";
-  $url = url('nanogong/file_upload',array('query'=>array('field_id'=>$field_id)));
-	
-  $sampleURL = "";
-  if(!empty($element['#value']['value'])){
-    $file = $element['#value']['file'];            
-    $surl = file_create_url($file->filename);
-    $sampleURL = "<param name='sampleURL' value='".$surl."'>";
-  }
-  $submitVoice =
-    'function submitVoice() {
-      var applet = document.getElementById("nanogong");'. 
-      'var ret = applet.sendGongRequest("PostToForm", "http://localhost/recorder/?q=nanogong/file_upload", "userfile", "", "temp");'. 
-      'if (ret == null || ret == "") alert("Failed to submit the voice recording!");'. 
-      'else alert("Voice recording has been submitted!"); } ';
-  drupal_add_js($submitVoice, 'inline');	
-	
-  $output = 
-    '<applet '.
-      ' id = "nanogong"'.
-      ' code="gong.NanoGong"'.
-      ' archive="'.base_path().drupal_get_path('module', 'nanogong').'/nanogongBase/nanogong.jar"'.
-      ' name=ListenUpRecorder"'.
-      ' width="180"'.
-      ' height="40">'.
-    ' </applet>'.
-    '<form>'.  
-      '<input type="button" value="Submit!" onclick="submitVoice()" />'.
-    '</form>';
-	
-  return $output;
+  return array(
+    'nanogong' => array('label' => 'File'),
+  );
 }
+
+/**
+ * Implementation of hook_field_settings().
+ */
+function nanogong_field_settings($op, $field) {
+  switch ($op) {
+	case 'database columns':
+		// value is audio file fid
+		$columns['value'] = array(
+			 'type' => 'int',
+			 'length' => 12,
+			 'sortable' => FALSE,
+			 'not null' => FALSE);
+		return $columns;
+  }
+}
+
+/**
+ * Implementation of hook_field().
+ *
+ */
+function nanogong_field($op, &$node, $field, &$items, $teaser, $page) {
+  
+  switch ($op) {
+	case 'presave':
+		foreach($items as $key=>$value){
+			if(!empty($value['value'])){
+				$file = nanogong_get_file_object($value['value']);
+	
+				// since the applet, and the file receive scripts saved the
+				// new recording for an anonymous user, we need to
+				// update the real uploading user here.		
+				if(file_set_status($file,1)){
+					global $user;
+					$file->uid = $user->uid;
+					//update user columb in file table
+					drupal_write_record('files', &$file, array('fid'));
+				}
+			}
+		}
+		break;
+	case 'load':
+			// load file data to field 
+			$field_name = $field['field_name'];
+			foreach($items as $key=>$value){
+				$n[$field_name][$key]['value'] = $value['value'];
+				$n[$field_name][$key]['file'] = nanogong_get_file_object($value['value']);
+			}
+			return $n;
+			
+		break;
+  }
+}
+
+/**
+ * Implementation of hook_content_is_empty().
+ *
+ *
+ * This function tells the content module whether or not to consider
+ * the $item to be empty. This is used by the content module
+ * to remove empty, non-required values before saving them.
+ */
+function nanogong_content_is_empty($item, $field) {
+
+  if (empty($item['value'])) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+
 
 /**
  * FAPI theme for an individual elements.

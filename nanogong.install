@@ -1,0 +1,34 @@
+<?php
+//$id
+/**
+ * Implementation of hook_install().
+ */
+function nanogong_install() {
+  content_notify('install', 'nanogong');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function nanogong_uninstall() {
+  content_notify('uninstall', 'nanogong');
+}
+
+/**
+ * Implementation of hook_enable().
+ *
+ * Notify content module when this module is enabled.
+ */
+function nanogong_enable() {
+    watchdog('testing','enable');
+  content_notify('enable', 'nanogong');
+}
+
+/**
+ * Implementation of hook_disable().
+ *
+ * Notify content module when this module is disabled.
+ */
+function nanogong_disable() {
+  content_notify('disable', 'nanogong');
+}
